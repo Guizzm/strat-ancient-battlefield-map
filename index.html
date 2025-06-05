@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ancient Battlefield Map</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            height: 100%; /* Ensure html and body take full height */
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Hide overflow to prevent scrolling of the entire page */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px; /* Padding for the body, pushes content inward */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        /* Custom base styles for positioning */
+        .base {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.75rem; /* text-xs */
+            color: white;
+            padding: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.2s ease-in-out, border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+            position: absolute; /* Essential for absolute positioning */
+            min-width: 80px; /* Adjusted min-width for larger emojis */
+            min-height: 80px; /* Adjusted min-height for larger emojis */
+            border-radius: 9999px; /* Fully rounded corners for the background */
+            z-index: 10; /* Ensure bases are above other elements */
+        }
+        .base:hover {
+            transform: scale(1.05);
+        }
+
+        .base-emoji {
+            font-size: 2.5rem; /* Consistent larger font size for all emojis */
+            line-height: 1; /* Remove extra line height */
+            margin-bottom: 2px; /* Small space between emoji and label */
+        }
+
+        .base-label {
+            font-size: 0.65rem; /* Smaller for labels */
+            line-height: 1;
+        }
+
+        /* Specific base colors and labels */
+        .mine-mana { background-color: #8B5CF6; /* Purple */ }
+        .avant-poste { background-color: #3B82F6; /* Blue */ }
+        .source-enchantee { background-color: #10B981; /* Green */ }
+        .forteresse-horde { background-color: #EF4444; /* Red */ }
+        .epee-champion { background-color: #F59E0B; /* Amber */ }
+        .bouclier-champion { background-color: #6B7280; /* Gray */ }
+        .arene-antique { background-color: #EC4899; /* Pink */ }
+
+        /* Keyframes for animations */
+        @keyframes highlightPulse {
+            0% { border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); }
+            50% { border-color: #FFFF00; box-shadow: 0 0 25px rgba(255, 255, 0, 1); }
+            100% { border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); }
+        }
+
+        @keyframes orbitAroundBase {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes counterRotateGuard {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+
+        @keyframes defendPulseOpacity {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+
+
+        /* Highlight classes for strategy tour with animations */
+        .highlighted-base {
+            animation: highlightPulse 1.5s infinite alternate;
+            z-index: 20; /* Bring to front */
+        }
+        .captured-base {
+            background-color: rgba(60, 179, 113, 0.7) !important; /* Medium Sea Green, translucent */
+            border-color: #3CB371 !important; /* Keep a solid border color */
+        }
+
+        /* Defense Orbiter and Indicator */
+        .defense-orbiter {
+            position: absolute;
+            width: 100%; /* Same size as base */
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none; /* Don't block clicks on base */
+            animation: orbitAroundBase 4s linear infinite; /* Orbit the wrapper */
+            transform-origin: center center; /* Rotate around base center */
+            display: none; /* Hidden by default */
+        }
+        .defended-base .defense-orbiter {
+            display: block; /* Show when base is defended */
+        }
+
+        .defense-indicator {
+            position: absolute;
+            top: -15px; /* Position the guard outside the base circle */
+            left: 50%;
+            transform: translate(-50%, -50%); /* Adjust to center itself and place it precisely */
+            font-size: 1.5rem; /* Size of the guard emoji */
+            line-height: 1;
+            z-index: 25; /* Above base and orbiter */
+            background-color: rgba(0, 0, 0, 0.6); /* Slightly darker background for visibility */
+            border-radius: 50%;
+            padding: 4px; /* More padding for better visual */
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            animation: counterRotateGuard 4s linear infinite, defendPulseOpacity 1s infinite alternate; /* Counter-rotation AND pulse */
+            transform-origin: center center; /* Ensure rotation around its own center */
+            color: #FFFFFF; /* Ensure emoji color is visible */
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .base {
+                min-width: 65px; /* Adjusted for smaller screens */
+                min-height: 65px; /* Adjusted for smaller screens */
+                font-size: 0.6rem;
+            }
+            .base-emoji {
+                font-size: 2rem; /* Slightly smaller for mobile */
+            }
+            .base-label {
+                font-size: 0.5rem;
+            }
+            .defense-indicator {
+                font-size: 1.2rem;
+                top: -10px;
+                padding: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="w-full max-w-2xl h-full flex flex-col justify-between p-4 border border-gray-700 bg-gray-900 rounded-lg shadow-2xl">
+        <!-- Map Title and Controls -->
+        <div class="flex-shrink-0">
+            <h1 class="text-white text-xl md:text-2xl font-extrabold text-center mb-4">Ancient Battlefield Map</h1>
+
+            <!-- Strategy Tour Controls -->
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-2 mb-4">
+                <button id="startTourButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition-colors duration-200 shadow-lg flex items-center justify-center">
+                    Start Strategic Tour 🚀
+                </button>
+                <button id="nextStepButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition-colors duration-200 shadow-lg hidden">
+                    Next Step ▶️
+                </button>
+            </div>
+            <div id="strategyMessage" class="text-white text-center text-md mb-4 hidden p-2 bg-gray-800 rounded-lg shadow-inner">
+                <!-- Strategy messages will appear here -->
+            </div>
+        </div>
+
+
+        <!-- Map Area - This will take up remaining vertical space -->
+        <div class="flex-grow w-full relative overflow-hidden border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-950 rounded-lg flex items-center justify-center" style="min-height: 0;">
+            <!-- Inner div to maintain aspect ratio for the map content -->
+            <div class="relative w-full h-full aspect-square max-w-full max-h-full">
+                <!-- SVG overlay for arrows (now empty as arrows are removed) -->
+                <svg id="map-svg-overlay" class="absolute top-0 left-0 w-full h-full" viewBox="0 0 100 100">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto" fill="rgba(255, 255, 255, 0.7)">
+                            <polygon points="0 0, 10 3.5, 0 7" />
+                        </marker>
+                    </defs>
+                </svg>
+
+                <!-- Spawn Zones -->
+                <div class="absolute top-0 left-0 right-0 h-1/12 bg-blue-700 bg-opacity-30 flex items-center justify-center text-white font-semibold rounded-t-lg" id="spawn-nord" data-x="50" data-y="4.16">
+                    <span class="base-emoji text-2xl">📍</span> Spawn Zone - Their Side
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 h-1/12 bg-blue-700 bg-opacity-30 flex items-center justify-center text-white font-semibold rounded-b-lg" id="spawn-sud" data-x="50" data-y="95.83">
+                    <span class="base-emoji text-2xl">📍</span> Spawn Zone - Our Side
+                </div>
+
+
+                <!-- Bases - Our Side (SUD) -->
+                <div class="base avant-poste" id="apl-sud" data-base-name="League Outpost (South)" style="top: 75%; left: 15%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">🚩</span>
+                    <span class="base-label">League Outpost</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base source-enchantee" id="se-sud" data-base-name="Enchanted Spring (South)" style="top: 75%; left: 40%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">💧</span>
+                    <span class="base-label">Enchanted Spring</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base forteresse-horde" id="fh-sud" data-base-name="Horde Fortress (South)" style="top: 75%; left: 60%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">🏰</span>
+                    <span class="base-label">Horde Fortress</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base mine-mana" id="mm-sud" data-base-name="Mana Mine (South)" style="top: 75%; left: 85%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">💎</span>
+                    <span class="base-label">Mana Mine</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+
+                <!-- Bases - Their Side (NORD) -->
+                <div class="base mine-mana" id="mm-nord" data-base-name="Mana Mine (North)" style="top: 25%; left: 15%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">💎</span>
+                    <span class="base-label">Mana Mine</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base forteresse-horde" id="fh-nord" data-base-name="Horde Fortress (North)" style="top: 25%; left: 40%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">🏰</span>
+                    <span class="base-label">Horde Fortress</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base source-enchantee" id="se-nord" data-base-name="Enchanted Spring (North)" style="top: 25%; left: 60%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">💧</span>
+                    <span class="base-label">Enchanted Spring</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base avant-poste" id="apl-nord" data-base-name="League Outpost (North)" style="top: 25%; left: 85%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">🚩</span>
+                    <span class="base-label">League Outpost</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+
+                <!-- Central Bases -->
+                <div class="base bouclier-champion" id="bc-centre" data-base-name="Champion's Shield" style="top: 50%; left: 25%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">🛡️</span>
+                    <span class="base-label">Champion's Shield</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base epee-champion" id="ec-centre" data-base-name="Champion's Sword" style="top: 50%; left: 75%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">🗡️</span>
+                    <span class="base-label">Champion's Sword</span>
+                    <div class="defense-orbiter"><span class="defense-indicator">💂</span></div>
+                </div>
+                <div class="base arene-antique" id="aa-centre" data-base-name="Ancient Arena" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                    <span class="base-emoji">🏟️</span>
+                    <span class="base-label">Ancient Arena</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex-shrink-0 mt-6 p-4 bg-gray-800 rounded-lg shadow-inner">
+            <h3 class="text-white text-lg font-semibold mb-3 text-center">Legend of Bases:</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-white text-sm">
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">🚩</span> League Outpost
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">💧</span> Enchanted Spring
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">🏰</span> Horde Fortress
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">💎</span> Mana Mine
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">🗡️</span> Champion's Sword
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">🛡️</span> Champion's Shield
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">🏟️</span> Ancient Arena
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">📍</span> Spawn Zone
+                </div>
+                <div class="flex items-center">
+                    <span class="base-emoji text-xl mr-2">💂</span> Defense in Place
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startTourButton = document.getElementById('startTourButton');
+            const nextStepButton = document.getElementById('nextStepButton');
+            const strategyMessage = document.getElementById('strategyMessage');
+            const allBases = document.querySelectorAll('.base');
+
+            let currentStep = 0;
+            const strategySteps = [
+                {
+                    message: "Step 1: Our Group A (South) and Group B (North) head to the League Outposts for a quick capture! 🚩 We'll need to leave a defense in these bases. 💂",
+                    highlight: ['apl-sud', 'apl-nord'],
+                    capturedAtThisStep: ['apl-sud', 'apl-nord'],
+                    defendedAtThisStep: ['apl-sud', 'apl-nord']
+                },
+                {
+                    message: "Step 2: After capturing the League Outposts, we focus on the Horde Fortress on our side (South). Remember to leave defense after capture!  ",
+                    highlight: ['fh-sud'],
+                    capturedAtThisStep: ['fh-sud'],
+                    defendedAtThisStep: ['apl-sud', 'apl-nord', 'fh-sud']
+                },
+                {
+                    message: "Step 3: Head to the Enchanted Spring on our side (South) for faster troop healing. Don't forget to leave a defense and announce it in chat! 💧",
+                    highlight: ['se-sud'],
+                    capturedAtThisStep: ['se-sud'],
+                    defendedAtThisStep: ['apl-sud', 'apl-nord', 'fh-sud', 'se-sud']
+                },
+                {
+                    message: "Step 4: Mana Mines are a priority! We aim to capture both if time allows, as they grant many points. Always remember to defend and announce it! 💎",
+                    highlight: ['mm-sud', 'mm-nord'],
+                    capturedAtThisStep: ['mm-sud', 'mm-nord'],
+                    defendedAtThisStep: ['apl-sud', 'apl-nord', 'fh-sud', 'se-sud', 'mm-sud', 'mm-nord']
+                },
+                {
+                    message: "Step 5: If time is unfavorable, the Champion's Sword becomes our priority to boost our heroes' attack. Once captured, maintain a strong defense inside. 🗡️",
+                    highlight: ['ec-centre'],
+                    capturedAtThisStep: ['ec-centre'],
+                    defendedAtThisStep: ['apl-sud', 'apl-nord', 'fh-sud', 'se-sud', 'mm-sud', 'mm-nord', 'ec-centre']
+                },
+                {
+                    message: "Step 6: If the enemy hasn't secured the Champion's Shield, we'll take it to strengthen our heroes' defense. Make sure a defense is in place and announced! 🛡️",
+                    highlight: ['bc-centre'],
+                    capturedAtThisStep: ['bc-centre'],
+                    defendedAtThisStep: ['apl-sud', 'apl-nord', 'fh-sud', 'se-sud', 'mm-sud', 'mm-nord', 'ec-centre', 'bc-centre']
+                },
+                {
+                    message: "Step 7: The Ancient Arena is open! Send your best marches for direct confrontations and to gain crucial points. 🏟️",
+                    highlight: ['aa-centre'],
+                    capturedAtThisStep: [], // Arena is not capturable
+                    defendedAtThisStep: ['apl-sud', 'apl-nord', 'fh-sud', 'se-sud', 'mm-sud', 'mm-nord', 'ec-centre', 'bc-centre'] // Previous defenses remain
+                },
+                {
+                    message: "This concludes the strategic tour. Remember that communication and adaptability are key on the battlefield! Good luck! 🎉",
+                    highlight: [],
+                    capturedAtThisStep: [],
+                    defendedAtThisStep: ['apl-sud', 'apl-nord', 'fh-sud', 'se-sud', 'mm-sud', 'mm-nord', 'ec-centre', 'bc-centre'] // Previous defenses remain
+                }
+            ];
+
+            function resetMap() {
+                allBases.forEach(base => {
+                    base.classList.remove('highlighted-base', 'captured-base', 'defended-base');
+                });
+                strategyMessage.classList.add('hidden');
+                nextStepButton.classList.add('hidden');
+                startTourButton.classList.remove('hidden');
+                currentStep = 0;
+            }
+
+            function showStep(stepIndex) {
+                // Reset all bases' dynamic states for this step's rendering
+                allBases.forEach(base => {
+                    base.classList.remove('highlighted-base', 'defended-base'); // Remove highlight and defense from *current* display
+                });
+
+                // Apply states from all completed previous steps AND the current step
+                for (let i = 0; i <= stepIndex; i++) {
+                    const stepData = strategySteps[i];
+
+                    // Apply 'capturedAtThisStep' - bases remain captured
+                    stepData.capturedAtThisStep.forEach(baseId => {
+                        const baseElement = document.getElementById(baseId);
+                        if (baseElement) {
+                            baseElement.classList.add('captured-base');
+                        }
+                    });
+
+                    // Apply 'defendedAtThisStep' (cumulative)
+                    stepData.defendedAtThisStep.forEach(baseId => {
+                        const baseElement = document.getElementById(baseId);
+                        if (baseElement) {
+                            baseElement.classList.add('defended-base');
+                        }
+                    });
+                }
+
+                // Apply highlight ONLY for the *current* step's targets
+                const current = strategySteps[stepIndex];
+                current.highlight.forEach(baseId => {
+                    const baseElement = document.getElementById(baseId);
+                    if (baseElement) {
+                        baseElement.classList.add('highlighted-base');
+                    }
+                });
+
+                strategyMessage.textContent = current.message;
+                strategyMessage.classList.remove('hidden');
+
+                if (stepIndex === strategySteps.length - 1) {
+                    nextStepButton.textContent = "Restart Tour";
+                } else {
+                    nextStepButton.textContent = "Next Step ▶️";
+                }
+            }
+
+            startTourButton.addEventListener('click', () => {
+                resetMap();
+                startTourButton.classList.add('hidden');
+                nextStepButton.classList.remove('hidden');
+                showStep(currentStep);
+            });
+
+            nextStepButton.addEventListener('click', () => {
+                currentStep++;
+                if (currentStep < strategySteps.length) {
+                    showStep(currentStep);
+                } else {
+                    resetMap(); // Reset if all steps are done
+                }
+            });
+
+            // Initial reset in case of page reload with cached state
+            resetMap();
+        });
+    </script>
+</body>
+</html>
